@@ -22,6 +22,29 @@ trait Translatable
         return static::getResource()::getTranslatableLocales();
     }
 
+    protected function removeUuidKeys(array $value): array
+    {
+        $result = [];
+        foreach ($value as $key => $item) {
+            // Проверяем, похож ли ключ на UUID:
+            if (is_string($key) && preg_match('/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i', $key)) {
+                $result[] = is_array($item) ? $this->removeUuidKeys($item) : $item;
+            } else {
+                $result[$key] = is_array($item) ? $this->removeUuidKeys($item) : $item;
+            }
+        }
+        return $result;
+    }
+
+    protected function transformArrayToIndexed(array $value): array
+    {
+        // Сначала удаляем только UUID-ключи.
+        $value = $this->removeUuidKeys($value);
+
+        // Убираем array_values, чтобы сохранить обычные строковые ключи (title, subtitle).
+        return $value;
+    }
+
     protected function handleRecordUpdate(Model $record, array $data): Model
     {
         $translatableAttributes = static::getResource()::getTranslatableAttributes();
@@ -29,6 +52,9 @@ trait Translatable
         $record->fill(Arr::except($data, $translatableAttributes));
 
         foreach (Arr::only($data, $translatableAttributes) as $key => $value) {
+            if (is_array($value)) {
+                $value = $this->transformArrayToIndexed($value);
+            }
             $record->setTranslation($key, $this->activeLocale, $value);
         }
 
@@ -63,6 +89,9 @@ trait Translatable
             $localeData = $this->mutateFormDataBeforeSave($localeData);
 
             foreach (Arr::only($localeData, $translatableAttributes) as $key => $value) {
+                if (is_array($value)) {
+                    $value = $this->transformArrayToIndexed($value);
+                }
                 $record->setTranslation($key, $locale, $value);
             }
         }
