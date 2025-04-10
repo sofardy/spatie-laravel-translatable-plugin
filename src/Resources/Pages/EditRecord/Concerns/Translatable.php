@@ -38,7 +38,7 @@ trait Translatable
 
         foreach ($this->otherLocaleData as $locale => $localeData) {
             $existingLocales ??= collect($translatableAttributes)
-                ->map(fn (string $attribute): array => array_keys($record->getTranslations($attribute)))
+                ->map(fn(string $attribute): array => array_keys($record->getTranslations($attribute)))
                 ->flatten()
                 ->unique()
                 ->all();
@@ -91,10 +91,10 @@ trait Translatable
 
         $this->otherLocaleData[$this->oldActiveLocale] = Arr::only($this->data, $translatableAttributes);
 
-        $this->data = [
+        $this->form->fill([
             ...Arr::except($this->data, $translatableAttributes),
             ...$this->otherLocaleData[$this->activeLocale] ?? [],
-        ];
+        ]);
 
         unset($this->otherLocaleData[$this->activeLocale]);
     }
