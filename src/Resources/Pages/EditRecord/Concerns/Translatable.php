@@ -36,12 +36,23 @@ trait Translatable
         return $result;
     }
 
+    protected function unifyImageFields(array $value): array
+    {
+        foreach ($value as $key => $item) {
+            if (is_array($item)) {
+                $value[$key] = $this->unifyImageFields($item);
+            }
+            if ($key === 'image' && is_array($item) && count($item) === 1) {
+                $value[$key] = $item[0];
+            }
+        }
+        return $value;
+    }
+
     protected function transformArrayToIndexed(array $value): array
     {
-        // Сначала удаляем только UUID-ключи.
         $value = $this->removeUuidKeys($value);
-
-        // Убираем array_values, чтобы сохранить обычные строковые ключи (title, subtitle).
+        $value = $this->unifyImageFields($value);
         return $value;
     }
 
